@@ -10,9 +10,9 @@ class FluoraAPI:
     def __init__(
         self, plant_ip: str, plant_port: int, server_address: str, server_port: int
     ) -> None:
-        """Initialize the UDP server to receive state updates from the plant.add()
-        Plant will send updates to UDP:12345 by default.
+        """Initialize the fluora client to send commands to the led plant.
+        Initialize the Fluora state server to receive the state of the plant.
         """
 
-        self._fluora_plant = FluoraClient(plant_ip, plant_port)
-        self._fluora_server = FluoraStateServer(server_address, server_port)
+        self._client = FluoraClient(plant_ip, plant_port)
+        self._state_server = FluoraStateServer(server_address, server_port)
