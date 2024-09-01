@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 include = ["fluoraapi*"]
 
 [project]
-name = "fluoraapi"
+name = "pyfluora"
 version="0.0.1"
 description="Python library for controlling Fluora LED plant"
 readme="README.rst"
@@ -15,7 +15,7 @@ license = {file = "LICENSE.txt"}
 authors = [
   {name = "drewancil", email = "andrew@crampedcell.com"},
 ]
-keywords = ["fluora","fluoraapi"]
+keywords = ["pyfluora","fluora"]
 classifiers=[
     'Development Status :: 5 - Production/Stable',
     'Intended Audience :: Developers',
