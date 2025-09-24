@@ -3,14 +3,16 @@
 import json
 import logging
 import socketserver
+import threading
+import socket
 
 from box import Box
 
-from .dataclasses import FluoraState
-from .enums import FluoraAnimations
+from fluoraapi.dataclasses import FluoraState
+from fluoraapi.enums import FluoraAnimations
 
 
-class FluoraStateServer(socketserver.UDPServer):
+class FluoraStateServer(socketserver.ThreadingUDPServer):
     """Starts UDP listener to receive state updates from the Fluora Plant.
     Sends state to MQTT for use in Home Assistant.
     """
@@ -21,11 +23,16 @@ class FluoraStateServer(socketserver.UDPServer):
         """
         self._json_payload: str = ""
         self._packet_assemble = {}
+        self._server_thread = None
+        self._shutdown_event = threading.Event()
 
         self._fluora_state = FluoraState()
         try:
             server_addr_port = (server_address, server_port)
-            socketserver.UDPServer.__init__(self, server_addr_port, FluoraUDPHandler)
+            socketserver.ThreadingUDPServer.__init__(
+                self, server_addr_port, FluoraUDPHandler
+            )
+            self.daemon_threads = True  # Allow threads to die when main thread dies
         except OSError:
             logging.error("Server could not start as UDP address/port already in use")
             raise
@@ -40,16 +47,45 @@ class FluoraStateServer(socketserver.UDPServer):
         """Return the current state of the plant."""
         return self._fluora_state
 
-    def server_start(self, poll_interval=0.5):
-        """Start listening for UDP packets from the plant."""
-        del poll_interval
-        while True:
-            self.handle_request()
+    def server_start(self):
+        """Start listening for UDP packets from the plant in a separate thread."""
+        if self._server_thread is not None and self._server_thread.is_alive():
+            logging.warning("Server is already running")
+            return
+
+        def _run_server():
+            """Internal method to run the server loop."""
+            logging.info("Starting UDP server on %s:%d", *self.server_address)
+            while not self._shutdown_event.is_set():
+                try:
+                    self.handle_request()
+                except OSError as e:
+                    if not self._shutdown_event.is_set():
+                        logging.error("Server error: %s", e)
+                    break
+            logging.info("UDP server stopped")
+
+        self._shutdown_event.clear()
+        self._server_thread = threading.Thread(target=_run_server, daemon=True)
+        self._server_thread.start()
 
     def server_stop(self):
         """Stop the UDP server from listening for plant updates."""
         logging.debug("Stopping UDP server")
-        return socketserver.UDPServer.server_close(self)
+        self._shutdown_event.set()
+
+        if self._server_thread and self._server_thread.is_alive():
+            # Send a dummy packet to unblock handle_request if needed
+            try:
+                dummy_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                dummy_socket.sendto(b"", self.server_address)
+                dummy_socket.close()
+            except (OSError, ConnectionError):
+                pass  # Ignore errors when sending dummy packet
+
+            self._server_thread.join(timeout=2.0)
+
+        return socketserver.ThreadingUDPServer.server_close(self)
 
     def _process_request(self, request, client_address):  # pylint: disable=R1710
         """Process incoming UDP datagrams from the plant.  A single state
@@ -90,67 +126,72 @@ class FluoraStateServer(socketserver.UDPServer):
             # store the partial state update
             self._packet_assemble[udp_packet_seq] = udp_payload
 
-        return socketserver.UDPServer.process_request(self, request, client_address)
+        return socketserver.ThreadingUDPServer.process_request(
+            self, request, client_address
+        )
 
-    def _update_state(self, state_update) -> None:
+    def _update_state(self, state_update: dict) -> None:
         """Update the plant state dataclass."""
         # experiment with python-box for nested dict access
         plant_box = Box(state_update)
         logging.debug(plant_box)
 
-        self.fluora_state.model = state_update["model"]
-        self.fluora_state.rssi = state_update["rssi"]
-        self.fluora_state.mac_address = state_update["network"]["macAddress"]
-        self.fluora_state.audio_filter = state_update["audio"]["filter"]["value"]
-        self.fluora_state.audio_release = state_update["audio"]["release"]["value"]
-        self.fluora_state.audio_gain = state_update["audio"]["gain"]["value"]
-        self.fluora_state.audio_attack = state_update["audio"]["attack"]["value"]
-        self.fluora_state.light_sensor_enabled = state_update["lightSensor"]["enabled"][
+        fs = self.fluora_state  # alias for easier access
+        state = state_update  # alias for easier access
+
+        fs.model = state["model"]
+        fs.rssi = state["rssi"]
+        fs.mac_address = state["network"]["macAddress"]
+        fs.audio_filter = state["audio"]["filter"]["value"]
+        fs.audio_release = state["audio"]["release"]["value"]
+        fs.audio_gain = state["audio"]["gain"]["value"]
+        fs.audio_attack = state["audio"]["attack"]["value"]
+        fs.light_sensor_enabled = state["lightSensor"]["enabled"]["value"]
+        fs.brightness = state["engine"]["brightness"]["value"]
+        fs.main_light = state["engine"]["isDisplaying"]["value"]
+        fs.animation_mode = state["engine"]["manualMode"]["loadedAnimationIndex"]
+        fs.active_animation = state["engine"]["manualMode"]["activeAnimationIndex"][
             "value"
         ]
-        self.fluora_state.brightness = state_update["engine"]["brightness"]["value"]
-        self.fluora_state.main_light = state_update["engine"]["isDisplaying"]["value"]
-        self.fluora_state.animation_mode = state_update["engine"]["manualMode"][
-            "loadedAnimationIndex"
-        ]
-        self.fluora_state.active_animation = state_update["engine"]["manualMode"][
-            "activeAnimationIndex"
-        ]["value"]
 
-        dashboard: dict = state_update["engine"]["manualMode"]["dashboard"]
+        dashboard: dict = state["engine"]["manualMode"]["dashboard"]
         if "Ve3ZS5tBUo4T" in dashboard:
-            self.fluora_state.animation_bloom = dashboard["Ve3ZS5tBUo4T"]["value"]
+            fs.animation_bloom = dashboard["Ve3ZS5tBUo4T"]["value"]
         if "Ve3ZSfv3PK4T" in dashboard:
-            self.fluora_state.animation_speed = dashboard["Ve3ZSfv3PK4T"]["value"]
+            fs.animation_speed = dashboard["Ve3ZSfv3PK4T"]["value"]
         if "Ve3ZSfSgP54T" in dashboard:
-            self.fluora_state.animation_size = dashboard["Ve3ZSfSgP54T"]["value"]
+            fs.animation_size = dashboard["Ve3ZSfSgP54T"]["value"]
 
-        palette: dict = state_update["engine"]["manualMode"]["palette"]
+        palette: dict = state["engine"]["manualMode"]["palette"]
         if "saturation" in palette:
-            self.fluora_state.palette_saturation = palette["saturation"]["value"]
+            fs.palette_saturation = palette["saturation"]["value"]
         if "hue" in palette:
-            self.fluora_state.palette_hue = palette["hue"]["value"]
+            fs.palette_hue = palette["hue"]["value"]
 
     def _server_activate(self):
         """Activate the server."""
-        socketserver.UDPServer.server_activate(self)
+        socketserver.ThreadingUDPServer.server_activate(self)
 
     def _handle_request(self):
         """Handle request."""
-        return socketserver.UDPServer.handle_request(self)
+        return socketserver.ThreadingUDPServer.handle_request(self)
 
     def _verify_request(self, request, client_address):
         """Verify request."""
-        return socketserver.UDPServer.verify_request(self, request, client_address)
+        return socketserver.ThreadingUDPServer.verify_request(
+            self, request, client_address
+        )
 
     def _finish_request(self, request, client_address):
         """Finish request."""
-        return socketserver.UDPServer.finish_request(self, request, client_address)
+        return socketserver.ThreadingUDPServer.finish_request(
+            self, request, client_address
+        )
 
     def _close_request_address(self, request_address):
         """Close request address."""
         logging.debug("close_request(%s)", request_address)
-        return socketserver.UDPServer.close_request(self, request_address)
+        return socketserver.ThreadingUDPServer.close_request(self, request_address)
 
 
 class FluoraUDPHandler(socketserver.BaseRequestHandler):

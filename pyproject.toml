@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=62.3"]
+requires = ["setuptools>=62.3", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -7,23 +7,45 @@ include = ["fluoraapi*"]
 
 [project]
 name = "pyfluora"
-version="0.0.1"
-description="Python library for controlling Fluora LED plant"
-readme="README.rst"
-requires-python=">=3.10"
-license = {file = "LICENSE.txt"}
+version = "0.0.4"
+description = "Python library for controlling Fluora LED plant fixtures"
+readme = "README.rst"
+requires-python = ">=3.10"
+license = "MIT"
 authors = [
   {name = "drewancil", email = "andrew@crampedcell.com"},
 ]
-keywords = ["pyfluora","fluora"]
-classifiers=[
-    'Development Status :: 5 - Production/Stable',
-    'Intended Audience :: Developers',
-    'License :: Freely Distributable',
-    'Programming Language :: Python :: 3'
+keywords = ["pyfluora", "fluora", "led", "lighting", "plant", "iot"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Home Automation",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = ["python-osc", "python-box"]
+dependencies = [
+    "python-osc>=1.8.0",
+    "python-box>=7.0.0",
+]
 
 [project.urls]
-Repository = "https://github.com/drewancil/fluoraapi"
+Homepage = "https://github.com/drewancil/pyfluora"
+Repository = "https://github.com/drewancil/pyfluora"
+Issues = "https://github.com/drewancil/pyfluora/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pylint>=2.17.0",
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[tool.setuptools.dynamic]
+# Leave this empty if not using dynamic fields
+
+[tool.pylint.messages_control]
+disable = ["too-many-instance-attributes", "too-few-public-methods"]
 

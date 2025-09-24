@@ -4,13 +4,13 @@ import logging
 
 from pythonosc.udp_client import SimpleUDPClient
 
-from .enums import AnimationMode, FluoraAnimations
+from fluoraapi.enums import AnimationMode, FluoraAnimations
 
 
 class FluoraClient:
     """Fluora Client."""
 
-    def __init__(self, plant_ip: str, plant_port) -> None:
+    def __init__(self, plant_ip: str, plant_port: int) -> None:
         self.client_ip_address = plant_ip
         self.client_udp_port = plant_port
         self.client = SimpleUDPClient(plant_ip, plant_port)
