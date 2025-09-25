@@ -40,7 +40,7 @@ def main():
         time.sleep(2)
 
         print("Setting rainbow animation...")
-        api.animation_set_manual("RAINBOW")
+        api.animation_set("RAINBOW")
         time.sleep(2)
 
         state = api.plant_state
@@ -78,7 +78,7 @@ def main():
             animations = ["TWINKLE", "PULSE", "SWEEP"]
             for anim in animations:
                 print(f"Setting animation to {anim}...")
-                api.animation_set_manual(anim)
+                api.animation_set(anim)
                 time.sleep(3)
 
             print("Server will automatically stop when exiting context")

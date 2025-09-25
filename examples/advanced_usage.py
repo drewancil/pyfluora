@@ -92,7 +92,7 @@ def demo_threaded_control():
         """Cycle animations in a separate thread."""
         animations = ["LEAFSWIRL", "SNAKES", "RAINBOW", "TWINKLE"]
         for anim in animations:
-            api.animation_set_manual(anim)
+            api.animation_set(anim)
             print(f"  Thread: Set animation to {anim}")
             time.sleep(4)
 

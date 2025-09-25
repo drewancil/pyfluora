@@ -3,9 +3,8 @@
 import signal
 from cmd import Cmd
 
-from fluoraapi import fluoraapi as api
-from fluoraapi.dataclasses import FluoraState
-from fluoraapi.enums import AnimationModeManual
+from .fluoraapi import FluoraAPI  # Changed to relative import
+from .dataclasses import FluoraState  # Changed to relative import
 
 
 class CommandShell(Cmd):
@@ -13,10 +12,10 @@ class CommandShell(Cmd):
 
     PLANT_IP = "192.168.4.172"
     PLANT_PORT = 6767
-    SERVER_IP = "192.168.4.229"
+    SERVER_IP = "192.168.4.209"
     SERVER_PORT = 12345
 
-    plant = api.FluoraAPI(PLANT_IP, PLANT_PORT, SERVER_IP, SERVER_PORT)
+    api = FluoraAPI(PLANT_IP, PLANT_PORT, SERVER_IP, SERVER_PORT)  # Fixed class name
 
     def exit_shell(self, sig=None, frame=None):
         """Exits the program cleanly."""
@@ -33,7 +32,8 @@ class CommandShell(Cmd):
         $ list_animations
         """
         del argstring
-        print([e.name for e in AnimationModeManual])
+        print(self.api.available_animations())
+        # print([e.name for e in AnimationModeManual])
 
     def do_quit(self, argstring):
         """Quits the program
@@ -48,7 +48,7 @@ class CommandShell(Cmd):
         """
         del argstring
         print("Reboot of plant requested")
-        self.plant.reboot()
+        self.api.reboot()
 
     def do_power(self, argstring: int):
         """Turn Light On/Off
@@ -56,7 +56,29 @@ class CommandShell(Cmd):
         $ power <0|1>
         """
         try:
-            self.plant.power(int(argstring))
+            self.api.power(int(argstring))
+        except ConnectionError as error:
+            print(f"Connection error: {error}")
+        except ValueError as error:
+            print(f"Value error: {error}")
+
+    def do_custom(self, argstring: str) -> None:
+        """Send a custom command to the plant
+
+        $ custom <route> <value>
+        """
+        arg_tuple = self._parse_argstring(argstring)
+        if len(arg_tuple) != 2:
+            print("Usage: custom <route> <value>")
+            return
+        route: str = arg_tuple[0]
+        try:
+            value: float = float(arg_tuple[1])
+        except ValueError:
+            print("Value must be a number")
+            return
+        try:
+            self.api.custom_command(route, value)  # pylint: disable=W0212
         except ConnectionError as error:
             print(f"Connection error: {error}")
         except ValueError as error:
@@ -69,14 +91,35 @@ class CommandShell(Cmd):
         """
         if float(argstring) < 0.00 or float(argstring) > 1.00:
             print("Size out of bounds [0-1]")
+            return
         else:
             brightness: float = float(argstring)
             try:
-                self.plant.brightness_set(brightness)
+                self.api.brightness_set(brightness)
             except ConnectionError as error:
                 print(f"Connection error: {error}")
             except ValueError as error:
                 print(f"Value error: {error}")
+
+    def do_animation_mode(self, argstring: str):
+        """Set the animation mode
+
+        $ set_mode <mode>
+        """
+        arg_tuple = self._parse_argstring(argstring)
+        if len(arg_tuple) != 1:
+            print("Usage: set_mode <mode>")
+            print("list_modes for possible values")
+            return
+        mode: str = arg_tuple[0].upper()
+        try:
+            self.api.animation_set_mode(mode)
+        except ConnectionError as error:
+            print(f"Connection problem: {error}")
+        except ValueError as error:
+            print(f"Mode problem: {error}")
+        except LookupError as error:
+            print(f"Animation problem: {error}")
 
     def do_animation(self, argstring: str):
         """Run pre-programmed effect."""
@@ -87,7 +130,7 @@ class CommandShell(Cmd):
             return
         effect: str = arg_tuple[0].upper()
         try:
-            self.plant.animation_set_manual(effect)
+            self.api.animation_set(effect)
         except ConnectionError as error:
             print(f"Connection problem: {error}")
         except ValueError as error:
@@ -95,13 +138,81 @@ class CommandShell(Cmd):
         except LookupError as error:
             print(f"Animation problem: {error}")
 
+    def do_palette_hue(self, argstring: float):
+        """Change the palette hue of the plant
+
+        $ palette_hue [0-1]
+        """
+        if float(argstring) < 0.00 or float(argstring) > 1.00:
+            print("Size out of bounds [0-1]")
+            return
+        else:
+            hue: float = float(argstring)
+            try:
+                self.api.palette_hue_set(hue)
+            except ConnectionError as error:
+                print(f"Connection error: {error}")
+            except ValueError as error:
+                print(f"Value error: {error}")
+
+    def do_palette_saturation(self, argstring: float):
+        """Change the palette saturation of the plant
+
+        $ palette_saturation [0-1]
+        """
+        if float(argstring) < 0.00 or float(argstring) > 1.00:
+            print("Size out of bounds [0-1]")
+            return
+        else:
+            saturation: float = float(argstring)
+            try:
+                self.api.palette_saturation_set(saturation)
+            except ConnectionError as error:
+                print(f"Connection error: {error}")
+            except ValueError as error:
+                print(f"Value error: {error}")
+
+    def do_animation_speed(self, argstring: float):
+        """Change the animation speed of the plant
+
+        $ animation_speed [0-1]
+        """
+        if float(argstring) < 0.00 or float(argstring) > 1.00:
+            print("Size out of bounds [0-1]")
+            return
+        else:
+            speed: float = float(argstring)
+            try:
+                self.api.animation_speed_set(speed)
+            except ConnectionError as error:
+                print(f"Connection error: {error}")
+            except ValueError as error:
+                print(f"Value error: {error}")
+
+    def do_animation_size(self, argstring: float):
+        """Change the animation size of the plant
+
+        $ animation_size [0-1]
+        """
+        if float(argstring) < 0.00 or float(argstring) > 1.00:
+            print("Size out of bounds [0-1]")
+            return
+        else:
+            size: float = float(argstring)
+            try:
+                self.api.animation_size_set(size)
+            except ConnectionError as error:
+                print(f"Connection error: {error}")
+            except ValueError as error:
+                print(f"Value error: {error}")
+
     def do_print_state(self, argstring: str):
         """Print the current state of the plant."""
         del argstring
-        if self.plant.plant_state is None:
+        if self.api.plant_state is None:
             print("No state data available")
         else:
-            state: FluoraState = self.plant.plant_state
+            state: FluoraState = self.api.plant_state
             print(state)
 
 
