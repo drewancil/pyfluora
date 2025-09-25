@@ -25,8 +25,8 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
         self._packet_assemble = {}
         self._server_thread = None
         self._shutdown_event = threading.Event()
-
         self._fluora_state = FluoraState()
+
         try:
             server_addr_port = (server_address, server_port)
             socketserver.ThreadingUDPServer.__init__(

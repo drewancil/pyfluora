@@ -14,6 +14,7 @@ class FluoraClient:
         self.client_ip_address = plant_ip
         self.client_udp_port = plant_port
         self.client = SimpleUDPClient(plant_ip, plant_port)
+        self._animation_mode: int = 0
 
     @property
     def effect_list(self) -> list[str]:
@@ -80,6 +81,7 @@ class FluoraClient:
                 self.client.send_message(
                     "/iwaaMkVzOfUM", [AnimationMode[mode].value, 0]
                 )
+                self._animation_mode = AnimationMode[mode].value
             except Exception as e:
                 logging.error("Failed to set animation mode: %s", e)
                 raise
@@ -125,8 +127,15 @@ class FluoraClient:
         if speed < 0.00 or speed > 1.00:
             raise ValueError("Speed must be between 0 and 1")
         logging.info("Plant command: Set Speed %s", speed)
+
+        route: str
+        if self._animation_mode == 2:  # manual mode
+            route = "/Vd72e0D61BuM"
+        else:
+            route = "/Ve3ZSfSgP54T"
+
         try:
-            self.client.send_message("/Ve3ZSfv3PK4T", [speed, 0])
+            self.client.send_message(route, [speed, 0])
         except Exception as e:
             logging.error("Failed to set speed: %s", e)
             raise
@@ -136,8 +145,15 @@ class FluoraClient:
         if size < 0.00 or size > 1.00:
             raise ValueError("Size must be between 0 and 1")
         logging.info("Plant command: Set Speed %s", size)
+
+        route: str
+        if self._animation_mode == 2:  # manual mode
+            route = "/Vd7XP0X61BuM"
+        else:
+            route = "/Ve3ZSfSgP54T"
+
         try:
-            self.client.send_message("/Ve3ZSfSgP54T", [size, 0])
+            self.client.send_message(route, [size, 0])
         except Exception as e:
             logging.error("Failed to set size: %s", e)
             raise
@@ -158,8 +174,15 @@ class FluoraClient:
         if palette_hue < 0.00 or palette_hue > 1.00:
             raise ValueError("Hue must be between 0 and 1")
         logging.info("Plant command: Set Palette Hue %s", palette_hue)
+
+        route: str
+        if self._animation_mode == 2:  # manual mode
+            route = "/VdV1IeK61BuM"
+        else:
+            route = "/ThWnxs65l0sj"
+
         try:
-            self.client.send_message("/ThWnxs65l0sj", [palette_hue, 0])
+            self.client.send_message(route, [palette_hue, 0])
         except Exception as e:
             logging.error("Failed to set palette hue: %s", e)
             raise
@@ -169,8 +192,14 @@ class FluoraClient:
         if palette_saturation < 0.00 or palette_saturation > 1.00:
             raise ValueError("Saturation must be between 0 and 1")
         logging.info("Plant command: Set Palette Saturation %s", palette_saturation)
+
+        route: str
+        if self._animation_mode == 2:  # manual mode
+            route = "/UH9E69aUREEb"
+        else:
+            route = "/y687U4Zgymsj"
         try:
-            self.client.send_message("/y687U4Zgymsj", [palette_saturation, 0])
+            self.client.send_message(route, [palette_saturation, 0])
         except Exception as e:
             logging.error("Failed to set palette saturation: %s", e)
             raise

@@ -1,21 +1,37 @@
 """Fluora Interactive Command Shell."""
 
+import logging
 import signal
 from cmd import Cmd
 
 from .fluoraapi import FluoraAPI  # Changed to relative import
 from .dataclasses import FluoraState  # Changed to relative import
 
+PLANT_IP = "192.168.4.172"
+PLANT_PORT = 6767
+SERVER_IP = "192.168.4.209"
+SERVER_PORT = 12345
+
 
 class CommandShell(Cmd):
     """Command interpreter for managing the laser."""
 
-    PLANT_IP = "192.168.4.172"
-    PLANT_PORT = 6767
-    SERVER_IP = "192.168.4.209"
-    SERVER_PORT = 12345
+    def __init__(self):
+        super().__init__()
+        self._configure_logging()
+        self.api = FluoraAPI(PLANT_IP, PLANT_PORT, SERVER_IP, SERVER_PORT)
 
-    api = FluoraAPI(PLANT_IP, PLANT_PORT, SERVER_IP, SERVER_PORT)  # Fixed class name
+    def _configure_logging(self):
+        """Set up logging for the application."""
+        timeform = "%d %b %Y %H:%M:%S"
+        loglevel = logging.DEBUG
+        logform = "%(asctime)s %(levelname)-7s %(funcName)16s() %(message)s"
+
+        logging.basicConfig(
+            level=loglevel,
+            datefmt=timeform,
+            format=logform,
+        )
 
     def exit_shell(self, sig=None, frame=None):
         """Exits the program cleanly."""
