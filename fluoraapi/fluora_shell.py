@@ -20,6 +20,12 @@ class CommandShell(Cmd):
         super().__init__()
         self._configure_logging()
         self.api = FluoraAPI(PLANT_IP, PLANT_PORT, SERVER_IP, SERVER_PORT)
+        # Start the UDP server to listen for state updates
+        try:
+            self.api.start_server()
+            logging.info("UDP state server started successfully")
+        except Exception as e:
+            logging.error("Failed to start UDP state server: %s", e)
 
     def _configure_logging(self):
         """Set up logging for the application."""
@@ -36,6 +42,11 @@ class CommandShell(Cmd):
     def exit_shell(self, sig=None, frame=None):
         """Exits the program cleanly."""
         del sig, frame
+        try:
+            self.api.stop_server()
+            logging.info("UDP state server stopped")
+        except Exception as e:
+            logging.error("Error stopping server: %s", e)
         print("Exited Fluora interactive shell")
         raise SystemExit
 
