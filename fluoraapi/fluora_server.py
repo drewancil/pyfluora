@@ -96,12 +96,12 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
         logging.debug("Processing request from %s", client_address)
         data = request[0]  # type: ignore
         logging.debug("Received data: %s", data)
-        
+
         # Check if data has the expected minimum length (4 bytes header)
         if len(data) < 4:
             logging.debug("Received packet too short (< 4 bytes), ignoring")
             return
-        
+
         # this bytes appears to be the UDP partial message number
         # data is bigger then 1024 byte packet
         udp_packet_seq = data[3]
