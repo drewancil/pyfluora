@@ -27,12 +27,14 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
         self._shutdown_event = threading.Event()
         self._fluora_state = FluoraState()
 
+        logging.info("Starting server on %s:%d", server_address, server_port)
         try:
             server_addr_port = (server_address, server_port)
             socketserver.ThreadingUDPServer.__init__(
                 self, server_addr_port, FluoraUDPHandler
             )
-            self.daemon_threads = True  # Allow threads to die when main thread dies
+            # self.daemon_threads = True  # Allow threads to die when main thread dies
+            self.daemon_threads = False  # This allows debugger to attach to threads
         except OSError:
             logging.error("Server could not start as UDP address/port already in use")
             raise
@@ -47,15 +49,26 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
         """Return the current state of the plant."""
         return self._fluora_state
 
-    def server_start(self):
+    def server_start(self, debug_mode: bool = False):
         """Start listening for UDP packets from the plant in a separate thread."""
+        if debug_mode:
+            # Run synchronously in main thread for debugging
+            logging.info(
+                "Starting UDP server in DEBUG MODE on %s:%d", *self.server_address
+            )
+            try:
+                self.serve_forever()
+            except KeyboardInterrupt:
+                logging.info("Server interrupted")
+            return
+
         if self._server_thread is not None and self._server_thread.is_alive():
             logging.warning("Server is already running")
             return
 
         def _run_server():
             """Internal method to run the server loop."""
-            logging.info("Starting UDP server on %s:%d", *self.server_address)
+            logging.info("Server thread running")
             while not self._shutdown_event.is_set():
                 try:
                     self.handle_request()
@@ -66,7 +79,7 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
             logging.info("UDP server stopped")
 
         self._shutdown_event.clear()
-        self._server_thread = threading.Thread(target=_run_server, daemon=True)
+        self._server_thread = threading.Thread(target=_run_server, daemon=False)
         self._server_thread.start()
 
     def server_stop(self):
@@ -87,26 +100,45 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
 
         return socketserver.ThreadingUDPServer.server_close(self)
 
-    def _process_request(self, request, client_address):  # pylint: disable=R1710
-        """Process incoming UDP datagrams from the plant.  A single state
-        update is 12 datagrams, so they will be stored in memory and posted
-        to plant_state after the final datagram in the series is received.
-        """
+    def process_request(self, request, client_address):  # pylint: disable=R1710
+        """Process incoming UDP datagrams from the plant."""
+        logging.debug("Processing request from %s", client_address)
         data = request[0]  # type: ignore
-        # this bytes appears to be the UDP partial message number
-        # data is bigger then 1024 byte packet
-        udp_packet_seq = data[3]
+
+        # byte #1: response_flag - whether or not the response is in response
+        # to a request or being sent proactively because the state changed
+        # (only used on a few occasions)
+        response_flag = data[0]
+
+        # byte #2: high level counter just to help put the packets back together for each response
+        #  (just continuously overflows the 255 but is enough info to help)
+        counter = data[1]
+
+        # byte #3: num_packets - number of packets/fragments in the response
+        num_packets = data[2]
+
+        # byte #4: packet_seq - the index of this individual packet/fragment
+        packet_seq = data[3]
+
+        breakpoint()
+        logging.debug(
+            "UDP Packet - response_flag: %d, counter: %d, num_packets: %d, packet_seq: %d",
+            response_flag,
+            counter,
+            num_packets,
+            packet_seq,
+        )
 
         # strip bytes 0-3 to leave just json payload / decode to utf-8
         udp_payload_raw = data[4:]
         udp_payload = udp_payload_raw.decode("utf-8")
 
         # series of 12 udp datagrams with full plant light state (json)
-        if udp_packet_seq == 0:
+        if packet_seq == 0:
             # clear the packet_assemble data for a new state update
             self._packet_assemble.clear()
             self._packet_assemble[0] = udp_payload
-        if udp_packet_seq == 12:
+        if packet_seq == 12:
             # final message in state update (12/12) - process state update
             self._packet_assemble[12] = udp_payload
             msg_vals = self._packet_assemble.values()
@@ -124,7 +156,7 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
                 return
         else:
             # store the partial state update
-            self._packet_assemble[udp_packet_seq] = udp_payload
+            self._packet_assemble[packet_seq] = udp_payload
 
         return socketserver.ThreadingUDPServer.process_request(
             self, request, client_address
@@ -209,5 +241,8 @@ class FluoraUDPHandler(socketserver.BaseRequestHandler):
         return socketserver.BaseRequestHandler.finish(self)
 
     def handle(self):
-        data: bytearray = self.request[0].strip()
-        logging.debug("Handle UDP: %s", data)
+        data = self.request[0]
+        breakpoint()
+        client_address = self.client_address
+        logging.debug("Handling UDP request from %s", client_address)
+        self.server.process_request((data, self.request[1]), client_address)

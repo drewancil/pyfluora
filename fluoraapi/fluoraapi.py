@@ -111,10 +111,10 @@ class FluoraAPI:
             logging.error("Failed to change animation size: %s", e)
             raise
 
-    def start_server(self) -> None:
+    def start_server(self, debug_mode: bool = False) -> None:
         """Start the UDP server to listen for state updates."""
         try:
-            self._state_server.server_start()
+            self._state_server.server_start(debug_mode=debug_mode)
         except Exception as e:
             logging.error("Failed to start state server: %s", e)
             raise
@@ -129,7 +129,7 @@ class FluoraAPI:
 
     def __enter__(self):
         """Context manager entry."""
-        self.start_server()
+        self.start_server(debug_mode=True)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

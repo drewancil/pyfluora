@@ -31,6 +31,10 @@ class CommandShell(Cmd):
             level=loglevel,
             datefmt=timeform,
             format=logform,
+            handlers=[
+                logging.StreamHandler(),  # Console output
+                # logging.FileHandler('fluora.log')  # Optional file output
+            ],
         )
 
     def exit_shell(self, sig=None, frame=None):
