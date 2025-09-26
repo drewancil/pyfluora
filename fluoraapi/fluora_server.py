@@ -69,6 +69,7 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
         def _run_server():
             """Internal method to run the server loop."""
             logging.info("Server thread running")
+            logging.info("Starting UDP server on %s:%d", *self.server_address)
             while not self._shutdown_event.is_set():
                 try:
                     self.handle_request()
@@ -100,10 +101,18 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
 
         return socketserver.ThreadingUDPServer.server_close(self)
 
-    def process_request(self, request, client_address):  # pylint: disable=R1710
+    def _process_request(self, request, client_address):  # pylint: disable=R1710
         """Process incoming UDP datagrams from the plant."""
         logging.debug("Processing request from %s", client_address)
         data = request[0]  # type: ignore
+
+        # Validate that we have data and it's not empty
+        if not data or len(data) < 4:
+            logging.debug(
+                "Received empty or incomplete UDP packet from %s, ignoring",
+                client_address
+            )
+            return
 
         # byte #1: response_flag - whether or not the response is in response
         # to a request or being sent proactively because the state changed
@@ -120,7 +129,6 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
         # byte #4: packet_seq - the index of this individual packet/fragment
         packet_seq = data[3]
 
-        breakpoint()
         logging.debug(
             "UDP Packet - response_flag: %d, counter: %d, num_packets: %d, packet_seq: %d",
             response_flag,
@@ -158,9 +166,7 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
             # store the partial state update
             self._packet_assemble[packet_seq] = udp_payload
 
-        return socketserver.ThreadingUDPServer.process_request(
-            self, request, client_address
-        )
+        # Note: Do not call the base class process_request to avoid recursion
 
     def _update_state(self, state_update: dict) -> None:
         """Update the plant state dataclass."""
@@ -242,7 +248,7 @@ class FluoraUDPHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         data = self.request[0]
-        breakpoint()
         client_address = self.client_address
         logging.debug("Handling UDP request from %s", client_address)
-        self.server.process_request((data, self.request[1]), client_address)
+        # pylint: disable=protected-access
+        self.server._process_request((data, self.request[1]), client_address)

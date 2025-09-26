@@ -129,7 +129,7 @@ class FluoraAPI:
 
     def __enter__(self):
         """Context manager entry."""
-        self.start_server(debug_mode=True)
+        self.start_server()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
