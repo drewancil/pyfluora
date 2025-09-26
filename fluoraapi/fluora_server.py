@@ -56,6 +56,7 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
         def _run_server():
             """Internal method to run the server loop."""
             logging.info("Starting UDP server on %s:%d", *self.server_address)
+            logging.info("Server thread running")
             while not self._shutdown_event.is_set():
                 try:
                     self.handle_request()
@@ -92,7 +93,15 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
         update is 12 datagrams, so they will be stored in memory and posted
         to plant_state after the final datagram in the series is received.
         """
+        logging.debug("Processing request from %s", client_address)
         data = request[0]  # type: ignore
+        logging.debug("Received data: %s", data)
+
+        # Check if data has the expected minimum length (4 bytes header)
+        if len(data) < 4:
+            logging.debug("Received packet too short (< 4 bytes), ignoring")
+            return
+
         # this bytes appears to be the UDP partial message number
         # data is bigger then 1024 byte packet
         udp_packet_seq = data[3]
@@ -125,10 +134,6 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
         else:
             # store the partial state update
             self._packet_assemble[udp_packet_seq] = udp_payload
-
-        return socketserver.ThreadingUDPServer.process_request(
-            self, request, client_address
-        )
 
     def _update_state(self, state_update: dict) -> None:
         """Update the plant state dataclass."""
@@ -210,4 +215,8 @@ class FluoraUDPHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         data: bytearray = self.request[0].strip()
-        logging.debug("Handle UDP: %s", data)
+        client_address = self.client_address
+        logging.debug("Handling UDP request from %s", client_address)
+        logging.debug("Received UDP data: %s", data)
+        # Call the server's _process_request method
+        self.server._process_request((data, self.request[1]), client_address)
