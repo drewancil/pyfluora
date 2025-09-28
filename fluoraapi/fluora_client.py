@@ -8,7 +8,7 @@ from fluoraapi.enums import AnimationMode, FluoraAnimations
 
 
 class FluoraClient:
-    """Fluora Client."""
+    """Class to issue commands with the Fluora plant API via OSC/UDP."""
 
     def __init__(self, plant_ip: str, plant_port: int) -> None:
         self.client_ip_address = plant_ip
@@ -95,13 +95,13 @@ class FluoraClient:
     def animation_set(self, animat_name: str) -> None:
         """Set an animation."""
         if any(x for x in FluoraAnimations if x.name == animat_name.upper()):
-            logging.info("Client: Set animation %s", animat_name)
             animation_num = int(FluoraAnimations[animat_name.upper()].value)
 
             # auto mode
             if animation_num == 0:
                 try:
                     self.animation_set_mode("AUTO")
+                    logging.info("Client: Set animation %s", animat_name)
                 except Exception as e:
                     logging.error("Failed to set animation mode to AUTO: %s", e)
                     raise
@@ -111,6 +111,7 @@ class FluoraClient:
                 try:
                     self.animation_set_mode("MANUAL")
                     self.client.send_message("/tdU63ENxy4UG", [animation_num - 100, 0])
+                    logging.info("Client: Set animation %s", animat_name)
                 except Exception as e:
                     logging.error("Failed to set animation mode to MANUAL: %s", e)
                     raise
@@ -120,6 +121,7 @@ class FluoraClient:
                 try:
                     self.animation_set_mode("SCENE")
                     self.client.send_message("/EpUwZA1GSPjO", [animation_num - 200, 0])
+                    logging.info("Client: Set animation %s", animat_name)
                 except Exception as e:
                     logging.error("Failed to set animation mode to SCENE: %s", e)
                     raise

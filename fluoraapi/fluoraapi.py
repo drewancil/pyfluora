@@ -39,10 +39,35 @@ class FluoraAPI:
         It is passed on to the user-defined callback if available."""
         logging.debug("State update received: %s", state)
         if self._api_callback:  # send via callback if available
+            logging.debug("Callback available - sending FluoraState: %s", state)
             self._api_callback(state)
-            logging.debug("Updated FluoraState: %s", state)
         else:
             logging.warning("Callback unavailable: %s", state)
+
+    def start_server(self) -> None:
+        """Start the UDP server to listen for state updates."""
+        try:
+            self._state_server.server_start()
+        except Exception as e:
+            logging.error("Failed to start state server: %s", e)
+            raise
+
+    def stop_server(self) -> None:
+        """Stop the UDP server."""
+        try:
+            self._state_server.server_stop()
+        except Exception as e:
+            logging.error("Failed to stop state server: %s", e)
+            raise
+
+    def __enter__(self):
+        """Context manager entry."""
+        self.start_server()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit."""
+        self.stop_server()
 
     @property
     def plant_state(self) -> FluoraState | None:
@@ -67,6 +92,14 @@ class FluoraAPI:
             self._client.power(state)
         except Exception as e:
             logging.error("Failed to change power state: %s", e)
+            raise
+
+    def light_sensor(self, state: int) -> None:
+        """Toggle the plant LED Light Sensor."""
+        try:
+            self._client.light_sensor(state)
+        except Exception as e:
+            logging.error("Failed to change light sensor state: %s", e)
             raise
 
     def custom_command(self, route: str, value: float) -> None:
@@ -133,27 +166,34 @@ class FluoraAPI:
             logging.error("Failed to change animation size: %s", e)
             raise
 
-    def start_server(self) -> None:
-        """Start the UDP server to listen for state updates."""
+    def audio_gain_set(self, audio_gain: float) -> None:
+        """Set the audio gain."""
         try:
-            self._state_server.server_start()
+            self._client.audio_gain_set(audio_gain)
         except Exception as e:
-            logging.error("Failed to start state server: %s", e)
+            logging.error("Failed to change audio gain: %s", e)
             raise
 
-    def stop_server(self) -> None:
-        """Stop the UDP server."""
+    def audio_attack_set(self, audio_attack: float) -> None:
+        """Set the audio gain attack."""
         try:
-            self._state_server.server_stop()
+            self._client.audio_attack_set(audio_attack)
         except Exception as e:
-            logging.error("Failed to stop state server: %s", e)
+            logging.error("Failed to change audio attack: %s", e)
             raise
 
-    def __enter__(self):
-        """Context manager entry."""
-        self.start_server()
-        return self
+    def audio_release_set(self, audio_release: float) -> None:
+        """Set the audio gain release."""
+        try:
+            self._client.audio_release_set(audio_release)
+        except Exception as e:
+            logging.error("Failed to change audio release: %s", e)
+            raise
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit."""
-        self.stop_server()
+    def audio_filter_set(self, audio_filter: float) -> None:
+        """Set the audio filter."""
+        try:
+            self._client.audio_filter_set(audio_filter)
+        except Exception as e:
+            logging.error("Failed to change audio filter: %s", e)
+            raise

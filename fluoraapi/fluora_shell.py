@@ -1,6 +1,7 @@
 """Fluora Interactive Command Shell."""
 
 import logging
+import pprint
 import signal
 import sys
 from cmd import Cmd
@@ -26,10 +27,11 @@ class CommandShell(Cmd):
             SVR_ADDRESS_WITH_PORT,
             api_callback=self._handle_api_update,
         )
+        self.api.start_server()
 
     def _handle_api_update(self, state: dict) -> None:
         """Handle updates from the Fluora API."""
-        print("API update received: %s", state)
+        print("\nAPI update received: %s", state)
 
     def _configure_logging(self):
         """Set up logging for the application."""
@@ -51,6 +53,10 @@ class CommandShell(Cmd):
     def exit_shell(self, sig=None, frame=None):
         """Exits the program cleanly."""
         del sig, frame
+        try:
+            self.api.stop_server()
+        except Exception:  # pylint: disable=W0703
+            pass
         print("Exited Fluora interactive shell")
         raise SystemExit
 
@@ -244,7 +250,9 @@ class CommandShell(Cmd):
             print("No state data available")
         else:
             state: FluoraState = self.api.plant_state
-            print(state)
+            print("\n-------- Current plant state -----------")
+            pprint.pprint(state)
+            print("\n")
 
 
 if __name__ == "__main__":

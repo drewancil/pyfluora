@@ -124,6 +124,7 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
                 decoder = FluoraConfigDecoder(my_schema)
                 try:
                     state_update = decoder.decode(byte_message)
+                    logging.debug("Decoded state update: %s", state_update)
                     self._update_state(state_update)
                 except Exception as e:  # pylint: disable=W0718
                     logging.error("Failed to decode state update: %s", e)
@@ -135,7 +136,7 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
     def _update_state(self, state: dict) -> None:
         """Updates the FluoraState dataclass from the decoded state dictionary."""
         # general settings - same for all modes
-
+        logging.debug("Updating state: %s", state)
         # light sensor setting
         self._fluora_state.light_sensor_enabled = (
             state.get("lightSensor", {}).get("enabled", {}).get("value")
@@ -197,6 +198,8 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
 
         elif self._fluora_state.mode == 2:  # manual mode
             self._fluora_state.animation_index = 2
+
+        logging.debug("Ready to update FluoraState: %s", self._fluora_state)
 
         if self._state_callback:  # send via callback if available
             self._state_callback(self._fluora_state)
