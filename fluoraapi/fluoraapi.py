@@ -12,15 +12,37 @@ class FluoraAPI:
     """Main class for the Fluora Plant API."""
 
     def __init__(
-        self, plant_ip: str, plant_port: int, server_address: str, server_port: int
+        self,
+        plant_ip: str,
+        plant_port: int,
+        svr_address_with_port: tuple[str, int],
+        api_callback=None,
     ) -> None:
         """Initialize the fluora client to send commands to the led plant.
         Initialize the Fluora state server to receive the state of the plant.
 
         Note: Call start_server() to begin listening for state updates.
+        Update: Context manager support added to automatically start/stop server.
         """
+
+        self._api_callback = api_callback
         self._client = FluoraClient(plant_ip, plant_port)
-        self._state_server = FluoraStateServer(server_address, server_port)
+        self._state_server = FluoraStateServer(
+            svr_address_with_port, state_callback=self._handle_state_update
+        )
+        root = logging.getLogger()
+        logging.debug("FluoraAPI: Logging handlers configured: %s", root.handlers)
+
+    def _handle_state_update(self, state: dict) -> None:
+        """Handle state update messages from the plant.
+        The server module calls this function on each state update.
+        It is passed on to the user-defined callback if available."""
+        logging.debug("State update received: %s", state)
+        if self._api_callback:  # send via callback if available
+            self._api_callback(state)
+            logging.debug("Updated FluoraState: %s", state)
+        else:
+            logging.warning("Callback unavailable: %s", state)
 
     @property
     def plant_state(self) -> FluoraState | None:

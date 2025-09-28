@@ -2,24 +2,34 @@
 
 import logging
 import signal
+import sys
 from cmd import Cmd
 
-from .fluoraapi import FluoraAPI  # Changed to relative import
-from .dataclasses import FluoraState  # Changed to relative import
+from .dataclasses import FluoraState  # relative import
+from .fluoraapi import FluoraAPI  # relative import
 
 PLANT_IP = "192.168.4.172"
 PLANT_PORT = 6767
-SERVER_IP = "192.168.4.209"
-SERVER_PORT = 12345
+SVR_ADDRESS_WITH_PORT = ("0.0.0.0", 12345)
 
 
 class CommandShell(Cmd):
-    """Command interpreter for managing the laser."""
+    """Command interpreter for managing the Fluora plant.."""
 
     def __init__(self):
         super().__init__()
         self._configure_logging()
-        self.api = FluoraAPI(PLANT_IP, PLANT_PORT, SERVER_IP, SERVER_PORT)
+
+        self.api = FluoraAPI(
+            PLANT_IP,
+            PLANT_PORT,
+            SVR_ADDRESS_WITH_PORT,
+            api_callback=self._handle_api_update,
+        )
+
+    def _handle_api_update(self, state: dict) -> None:
+        """Handle updates from the Fluora API."""
+        print("API update received: %s", state)
 
     def _configure_logging(self):
         """Set up logging for the application."""
@@ -31,7 +41,12 @@ class CommandShell(Cmd):
             level=loglevel,
             datefmt=timeform,
             format=logform,
+            stream=sys.stdout,
+            force=True,
         )
+
+        root = logging.getLogger()
+        logging.debug("Logging handlers configured: %s", root.handlers)
 
     def exit_shell(self, sig=None, frame=None):
         """Exits the program cleanly."""
@@ -236,5 +251,4 @@ if __name__ == "__main__":
     prompt = CommandShell()
     signal.signal(signal.SIGINT, prompt.exit_shell)  # type: ignore
     prompt.prompt = "fluora_shell $ "
-    prompt.cmdloop("Started Fluora interactive shell")
-    prompt.cmdloop("Started Fluora interactive shell")
+    prompt.cmdloop("\n------- Fluora Interactive Shell (help for commands) -------\n")

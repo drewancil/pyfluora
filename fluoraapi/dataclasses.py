@@ -7,9 +7,7 @@ from dataclasses import dataclass
 class FluoraState:  # pylint: disable=R0902
     """Represents the state of a Fluora Plant."""
 
-    model: str = ""
-    rssi: int = 0
-    mac_address: str = ""
+    nickname: str = ""
 
     audio_filter: float = 0.0
     audio_release: float = 0.0
@@ -18,14 +16,16 @@ class FluoraState:  # pylint: disable=R0902
 
     light_sensor_enabled: bool = False
 
-    main_light: bool = False
     brightness: float = 0.0
+    main_light: bool = False
 
-    animation_mode: int = 0
-    active_animation: str = ""
-    animation_bloom: float = 0.0
+    mode: int = 0
+
+    animation_name: str = ""
+    animation_index: int = -1
+
     animation_speed: float = 0.0
     animation_size: float = 0.0
 
-    palette_saturation: float = 0.0
-    palette_hue: float = 0.0
+    saturation: float = 0.0
+    hue: float = 0.0
