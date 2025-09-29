@@ -43,8 +43,8 @@ def demo_standalone_components():
     print("-" * 30)
 
     # Use separate client and server
-    client = FluoraClient("192.168.4.172", 6767)
-    server = FluoraStateServer("192.168.4.229", 12345)
+    client = FluoraClient(("192.168.4.172", 6767))
+    server = FluoraStateServer(("192.168.4.229", 12345))
 
     try:
         # Start server in background
@@ -97,7 +97,9 @@ def demo_threaded_control():
             time.sleep(4)
 
     try:
-        with FluoraAPI("192.168.1.100", 4210, "0.0.0.0", 12345) as api:
+        client = ("192.168.1.172", 6767)
+        server = ("0.0.0.0", 12345)
+        with FluoraAPI(client, server) as api:
             api.power(1)  # Make sure it's on
 
             # Start threads for different controls

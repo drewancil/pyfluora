@@ -3,6 +3,7 @@
 
 import time
 import logging
+from fluoraapi import FluoraAPI
 
 # Set up logging to see what's happening
 logging.basicConfig(level=logging.INFO)
@@ -11,17 +12,15 @@ logging.basicConfig(level=logging.INFO)
 def main():
     """Demonstrate basic usage of the FluoraAPI."""
 
-    plant_ip = "192.168.4.172"
-    plant_port = 6767
-    server_address = "192.168.4.229"
-    server_port = 12345
+    client = ("192.168.1.172", 6767)
+    server = ("0.0.0.0", 12345)
 
     print("Fluora LED Plant Control Example")
     print("=" * 35)
 
     # Method 1: Manual server management
     print("\n1. Manual server management:")
-    api = FluoraAPI(plant_ip, plant_port, server_address, server_port)
+    api = FluoraAPI(client, server)
 
     try:
         # Start the server to receive state updates
@@ -47,7 +46,7 @@ def main():
             print("\nCurrent state:")
             print(f"  Brightness: {state.brightness}")
             print(f"  Main light on: {state.main_light}")
-            print(f"  Animation: {state.active_animation}")
+            print(f"  Animation: {state.animation_name}")
         else:
             print("No state received yet")
 
@@ -64,7 +63,7 @@ def main():
     print("\n2. Using context manager (recommended):")
 
     try:
-        with FluoraAPI(plant_ip, plant_port, server_address, server_port) as api:
+        with FluoraAPI(client, server) as api:
             print("Server automatically started")
 
             # Cycle through some brightness levels
