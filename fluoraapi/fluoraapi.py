@@ -3,7 +3,6 @@
 import logging
 
 from fluoraapi.dataclasses import FluoraState
-
 from fluoraapi.fluora_client import FluoraClient
 from fluoraapi.fluora_server import FluoraStateServer
 
@@ -13,9 +12,8 @@ class FluoraAPI:
 
     def __init__(
         self,
-        plant_ip: str,
-        plant_port: int,
-        svr_address_with_port: tuple[str, int],
+        plant_ip_port: tuple[str, int],
+        server_ip_port: tuple[str, int],
         api_callback=None,
     ) -> None:
         """Initialize the fluora client to send commands to the led plant.
@@ -26,17 +24,19 @@ class FluoraAPI:
         """
 
         self._api_callback = api_callback
-        self._client = FluoraClient(plant_ip, plant_port)
+        self._client = FluoraClient(plant_ip_port)
         self._state_server = FluoraStateServer(
-            svr_address_with_port, state_callback=self._handle_state_update
+            server_ip_port, state_callback=self._handle_state_update
         )
-        root = logging.getLogger()
-        logging.debug("FluoraAPI: Logging handlers configured: %s", root.handlers)
+        # root = logging.getLogger()
+        # logging.debug("FluoraAPI: Logging handlers configured: %s", root.handlers)
 
     def _handle_state_update(self, state: dict) -> None:
         """Handle state update messages from the plant.
         The server module calls this function on each state update.
-        It is passed on to the user-defined callback if available."""
+        It is passed on to the user-defined callback if available.
+        """
+
         logging.debug("State update received: %s", state)
         if self._api_callback:  # send via callback if available
             logging.debug("Callback available - sending FluoraState: %s", state)
@@ -61,12 +61,12 @@ class FluoraAPI:
             raise
 
     def __enter__(self):
-        """Context manager entry."""
+        """Context manager entry for FluoraAPI."""
         self.start_server()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit."""
+        """Context manager exit for FluoraAPI."""
         self.stop_server()
 
     @property

@@ -4,20 +4,16 @@ import logging
 import time
 
 from pythonosc.udp_client import SimpleUDPClient
-from fluoraapi.enums import AnimationMode, FluoraAnimations
+from fluoraapi.enums import AnimationMode, FluoraAnimations, OSCPathNames
 
 
 class FluoraClient:
     """Class to issue commands with the Fluora plant API via OSC/UDP."""
 
-    def __init__(self, plant_ip: str, plant_port: int) -> None:
-        self.client_ip_address = plant_ip
-        self.client_udp_port = plant_port
-        self.client = SimpleUDPClient(plant_ip, plant_port)
+    def __init__(self, plant_ip_port: tuple[str, int]) -> None:
+        """Initialize the fluora client to send commands to the led plant."""
+        self.client = SimpleUDPClient(plant_ip_port[0], plant_ip_port[1])
         self._animation_mode: int = 0
-
-        root = logging.getLogger()
-        logging.debug("FluoraClient: Logging handlers configured: %s", root.handlers)
 
     @property
     def effect_list(self) -> list[str]:
@@ -38,7 +34,9 @@ class FluoraClient:
         if power_state in (0, 1):
             logging.info("Client: Power %s", power_state)
             try:
-                self.client.send_message("/SyYOTiXjQBjW", [power_state, power_state])
+                self.client.send_message(
+                    OSCPathNames.POWER.value, [power_state, power_state]
+                )
             except Exception as e:
                 logging.error("Failed to change power state: %s", e)
                 raise
@@ -50,7 +48,9 @@ class FluoraClient:
         if sensor_state in (0, 1):
             logging.info("Client: Light sensor %s", sensor_state)
             try:
-                self.client.send_message("/S53upLXAu7vg", [sensor_state, sensor_state])
+                self.client.send_message(
+                    OSCPathNames.LIGHT_SENSOR.value, [sensor_state, sensor_state]
+                )
             except Exception as e:
                 logging.error("Failed to change light sensor state: %s", e)
                 raise
@@ -61,7 +61,7 @@ class FluoraClient:
         """Reboot the plant."""
         logging.info("Client: Reboot")
         try:
-            self.client.send_message("/pixelair/engine/reboot", [1, 0])
+            self.client.send_message(OSCPathNames.REBOOT.value, [1, 0])
         except Exception as e:
             logging.error("Failed to reboot plant: %s", e)
             raise
@@ -72,7 +72,9 @@ class FluoraClient:
             raise ValueError("Brightness must be between 0 and 1")
         logging.info("Client: Set Brightness %s", brightness_level)
         try:
-            self.client.send_message("/Uv7aMFw5P2lX", [brightness_level, 0])
+            self.client.send_message(
+                OSCPathNames.BRIGHTNESS.value, [brightness_level, 0]
+            )
         except Exception as e:
             logging.error("Failed to set brightness: %s", e)
             raise
@@ -82,8 +84,9 @@ class FluoraClient:
         if any(x for x in AnimationMode if x.name == mode):
             try:
                 logging.info("Client: Set mode %s", mode)
+
                 self.client.send_message(
-                    "/iwaaMkVzOfUM", [AnimationMode[mode].value, 0]
+                    OSCPathNames.ANIMATION_MODE.value, [AnimationMode[mode].value, 0]
                 )
                 self._animation_mode = AnimationMode[mode].value
             except Exception as e:
@@ -110,7 +113,9 @@ class FluoraClient:
             if animation_num in range(100, 199):
                 try:
                     self.animation_set_mode("MANUAL")
-                    self.client.send_message("/tdU63ENxy4UG", [animation_num - 100, 0])
+                    self.client.send_message(
+                        OSCPathNames.ANIMATION_MANUAL.value, [animation_num - 100, 0]
+                    )
                     logging.info("Client: Set animation %s", animat_name)
                 except Exception as e:
                     logging.error("Failed to set animation mode to MANUAL: %s", e)
@@ -120,7 +125,9 @@ class FluoraClient:
             if animation_num in range(200, 299):
                 try:
                     self.animation_set_mode("SCENE")
-                    self.client.send_message("/EpUwZA1GSPjO", [animation_num - 200, 0])
+                    self.client.send_message(
+                        OSCPathNames.ANIMATION_SCENE.value, [animation_num - 200, 0]
+                    )
                     logging.info("Client: Set animation %s", animat_name)
                 except Exception as e:
                     logging.error("Failed to set animation mode to SCENE: %s", e)
@@ -133,15 +140,11 @@ class FluoraClient:
         if speed < 0.00 or speed > 1.00:
             raise ValueError("Speed must be between 0 and 1")
         logging.info("Client: Set Speed %s", speed)
-
-        route: str
-        if self._animation_mode == 2:  # manual mode
-            route = "/Vd72e0D61BuM"
-        else:
-            route = "/Ve3ZSfSgP54T"
-
         try:
-            self.client.send_message(route, [speed, 0])
+            if self._animation_mode == 2:  # manual mode
+                self.client.send_message(OSCPathNames.SPEED_MANUAL.value, [speed, 0])
+            else:
+                self.client.send_message(OSCPathNames.SPEED_SCENE.value, [speed, 0])
         except Exception as e:
             logging.error("Failed to set speed: %s", e)
             raise
@@ -151,15 +154,11 @@ class FluoraClient:
         if size < 0.00 or size > 1.00:
             raise ValueError("Size must be between 0 and 1")
         logging.info("Client: Set Size %s", size)
-
-        route: str
-        if self._animation_mode == 2:  # manual mode
-            route = "/Vd7XP0X61BuM"
-        else:
-            route = "/Ve3ZSfSgP54T"
-
         try:
-            self.client.send_message(route, [size, 0])
+            if self._animation_mode == 2:  # manual mode
+                self.client.send_message(OSCPathNames.SIZE_MANUAL.value, [size, 0])
+            else:
+                self.client.send_message(OSCPathNames.SIZE_SCENE.value, [size, 0])
         except Exception as e:
             logging.error("Failed to set size: %s", e)
             raise
@@ -180,15 +179,13 @@ class FluoraClient:
         if palette_hue < 0.00 or palette_hue > 1.00:
             raise ValueError("Hue must be between 0 and 1")
         logging.info("Client: Set Palette Hue %s", palette_hue)
-
-        route: str
-        if self._animation_mode == 2:  # manual mode
-            route = "/VdV1IeK61BuM"
-        else:
-            route = "/ThWnxs65l0sj"
-
         try:
-            self.client.send_message(route, [palette_hue, 0])
+            if self._animation_mode == 2:  # manual mode
+                self.client.send_message(
+                    OSCPathNames.HUE_MANUAL.value, [palette_hue, 0]
+                )
+            else:
+                self.client.send_message(OSCPathNames.HUE_SCENE.value, [palette_hue, 0])
         except Exception as e:
             logging.error("Failed to set palette hue: %s", e)
             raise
@@ -198,14 +195,15 @@ class FluoraClient:
         if palette_saturation < 0.00 or palette_saturation > 1.00:
             raise ValueError("Saturation must be between 0 and 1")
         logging.info("Client: Set Palette Saturation %s", palette_saturation)
-
-        route: str
-        if self._animation_mode == 2:  # manual mode
-            route = "/UH9E69aUREEb"
-        else:
-            route = "/y687U4Zgymsj"
         try:
-            self.client.send_message(route, [palette_saturation, 0])
+            if self._animation_mode == 2:  # manual mode
+                self.client.send_message(
+                    OSCPathNames.SATURATION_MANUAL.value, [palette_saturation, 0]
+                )
+            else:
+                self.client.send_message(
+                    OSCPathNames.SATURATION_SCENE.value, [palette_saturation, 0]
+                )
         except Exception as e:
             logging.error("Failed to set palette saturation: %s", e)
             raise
@@ -216,7 +214,7 @@ class FluoraClient:
             raise ValueError("Gain must be between 0 and 1")
         logging.info("Client: Set Audio Gain %s", audio_gain)
         try:
-            self.client.send_message("/HwBeJeS0ufSp", [audio_gain, 0])
+            self.client.send_message(OSCPathNames.AUDIO_GAIN.value, [audio_gain, 0])
         except Exception as e:
             logging.error("Failed to set audio gain: %s", e)
             raise
@@ -227,7 +225,7 @@ class FluoraClient:
             raise ValueError("Attack must be between 0 and 1")
         logging.info("Client: Set Audio Attack %s", audio_attack)
         try:
-            self.client.send_message("/HwBeGOxYN5Sp", [audio_attack, 0])
+            self.client.send_message(OSCPathNames.AUDIO_ATTACK.value, [audio_attack, 0])
         except Exception as e:
             logging.error("Failed to set audio attack: %s", e)
             raise
@@ -238,7 +236,9 @@ class FluoraClient:
             raise ValueError("Release must be between 0 and 1")
         logging.info("Client: Set Audio Release %s", audio_release)
         try:
-            self.client.send_message("/HwBeogt1MBDp", [audio_release, 0])
+            self.client.send_message(
+                OSCPathNames.AUDIO_RELEASE.value, [audio_release, 0]
+            )
         except Exception as e:
             logging.error("Failed to set audio release: %s", e)
             raise
@@ -249,7 +249,7 @@ class FluoraClient:
             raise ValueError("Filter must be between 0 and 1")
         logging.info("Client: Set Audio Filter %s", audio_filter)
         try:
-            self.client.send_message("/HwBeiitcOaSp", [audio_filter, 0])
+            self.client.send_message(OSCPathNames.AUDIO_FILTER.value, [audio_filter, 0])
         except Exception as e:
             logging.error("Failed to set audio filter: %s", e)
             raise
@@ -257,13 +257,12 @@ class FluoraClient:
 
 def main():
     """Demonstrate basic usage of the FluoraAPI."""
-    plant_ip = "192.168.4.172"
-    plant_port = 6767
-    api = FluoraClient(plant_ip, plant_port)
+    plant_ip_port = ("192.168.4.172", 6767)
+    api = FluoraClient(plant_ip_port)
     api.power(1)
     api.brightness_set(0.72)
     time.sleep(1)
-    # api.animation_set("CHILL")
+    api.animation_set("CHILL")
 
 
 if __name__ == "__main__":

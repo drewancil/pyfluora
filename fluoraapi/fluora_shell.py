@@ -9,8 +9,7 @@ from cmd import Cmd
 from .dataclasses import FluoraState  # relative import
 from .fluoraapi import FluoraAPI  # relative import
 
-PLANT_IP = "192.168.4.172"
-PLANT_PORT = 6767
+PLANT_ADDRESS_WITH_PORT = ("192.168.4.172", 6767)
 SVR_ADDRESS_WITH_PORT = ("0.0.0.0", 12345)
 
 
@@ -22,8 +21,7 @@ class CommandShell(Cmd):
         self._configure_logging()
 
         self.api = FluoraAPI(
-            PLANT_IP,
-            PLANT_PORT,
+            PLANT_ADDRESS_WITH_PORT,
             SVR_ADDRESS_WITH_PORT,
             api_callback=self._handle_api_update,
         )
@@ -46,9 +44,6 @@ class CommandShell(Cmd):
             stream=sys.stdout,
             force=True,
         )
-
-        root = logging.getLogger()
-        logging.debug("Logging handlers configured: %s", root.handlers)
 
     def exit_shell(self, sig=None, frame=None):
         """Exits the program cleanly."""

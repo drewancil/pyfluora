@@ -3,6 +3,30 @@
 from enum import Enum
 
 
+class OSCPathNames(Enum):
+    """OSC path names for the Fluora plant API."""
+
+    POWER = "/SyYOTiXjQBjW"
+    LIGHT_SENSOR = "/S53upLXAu7vg"
+    REBOOT = "/pixelair/engine/reboot"
+    BRIGHTNESS = "/Uv7aMFw5P2lX"
+    ANIMATION_MODE = "/iwaaMkVzOfUM"
+    ANIMATION_MANUAL = "/tdU63ENxy4UG"
+    ANIMATION_SCENE = "/EpUwZA1GSPjO"
+    SPEED_MANUAL = "/Vd72e0D61BuM"
+    SPEED_SCENE = "/Ve3ZSfSgP54T"
+    SIZE_MANUAL = "/Vd7XP0X61BuM"
+    SIZE_SCENE = "/Ve3ZSfSgP54T"
+    HUE_MANUAL = "/Vd7Xz0X61BuM"
+    HUE_SCENE = "/Ve3ZSfSgP54T"
+    SATURATION_MANUAL = "/UH9E69aUREEb"
+    SATURATION_SCENE = "/y687U4Zgymsj"
+    AUDIO_GAIN = "/HwBeJeS0ufSp"
+    AUDIO_ATTACK = "HwBeGOxYN5Sp"
+    AUDIO_RELEASE = "/HwBeogt1MBDp"
+    AUDIO_FILTER = "/HwBeiitcOaSp"
+
+
 class AnimationMode(Enum):
     """Animation modes of the Fluora plant."""
 

@@ -1,4 +1,6 @@
-"""Module that implements the Fluora State Server."""
+"""Module that implements the Fluora State Server.  Listens on UDP port 12345
+for state updates from the plant.
+"""
 
 import json
 import logging
@@ -27,20 +29,16 @@ class FluoraStateServer(socketserver.ThreadingUDPServer):
 
     allow_reuse_address = True
 
-    def __init__(self, address_with_port: tuple[str, int], state_callback=None) -> None:
+    def __init__(self, server_ip_port: tuple[str, int], state_callback=None) -> None:
+        """Initialize the UDP server to receive state updates from the plant."""
         self._json_payload: str = ""
         self._packet_assemble: dict[int, bytes] = {}
         self._server_thread: threading.Thread | None = None
         self._shutdown_event = threading.Event()
         self._fluora_state = FluoraState()
         self._state_callback = state_callback
-        super().__init__(address_with_port, FluoraUDPHandler)
+        super().__init__(server_ip_port, FluoraUDPHandler)
         self.daemon_threads = True
-
-        root = logging.getLogger()
-        logging.debug(
-            "FluoraStateServer: Logging handlers configured: %s", root.handlers
-        )
 
     @property
     def effect_list(self) -> list[str]:
@@ -242,7 +240,7 @@ def main():
         format="%(asctime)s %(levelname)s %(threadName)s %(message)s",
     )
 
-    ip_port: tuple[str, int] = ("0.0.0.0", 12345)
+    ip_port = ("0.0.0.0", 12345)
 
     server = FluoraStateServer(ip_port)
     server.server_start()
