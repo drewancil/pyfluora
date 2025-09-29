@@ -27,10 +27,6 @@ class CommandShell(Cmd):
         )
         self.api.start_server()
 
-    def _handle_api_update(self, state: dict) -> None:
-        """Handle updates from the Fluora API."""
-        print("\nAPI update received: %s", state)
-
     def _configure_logging(self):
         """Set up logging for the application."""
         timeform = "%d %b %Y %H:%M:%S"
@@ -58,6 +54,11 @@ class CommandShell(Cmd):
     def _parse_argstring(self, argstring):
         """Convert a series of zero or more argument to an argument tuple."""
         return tuple(map(str, argstring.split()))
+
+    def _handle_api_update(self, state: dict) -> None:
+        """Handle updates from the Fluora API."""
+        del state
+        print("API state update received")
 
     def do_list_animations(self, argstring):
         """Prints a list of all animations available
@@ -94,7 +95,7 @@ class CommandShell(Cmd):
         except ValueError as error:
             print(f"Value error: {error}")
 
-    def do_custom(self, argstring: str) -> None:
+    def do_custom_float(self, argstring: str) -> None:
         """Send a custom command to the plant
 
         $ custom <route> <value>
@@ -105,12 +106,35 @@ class CommandShell(Cmd):
             return
         route: str = arg_tuple[0]
         try:
-            value: float = float(arg_tuple[1])
+            value_float = float(arg_tuple[1])
         except ValueError:
             print("Value must be a number")
             return
         try:
-            self.api.custom_command(route, value)  # pylint: disable=W0212
+            self.api.custom_command_float(route, value_float)  # pylint: disable=W0212
+        except ConnectionError as error:
+            print(f"Connection error: {error}")
+        except ValueError as error:
+            print(f"Value error: {error}")
+
+    def do_custom_int(self, argstring: str) -> None:
+        """Send a custom command to the plant
+
+        $ custom <route> <value>
+        """
+        arg_tuple = self._parse_argstring(argstring)
+        if len(arg_tuple) != 2:
+            print("Usage: custom <route> <value>")
+            print("Example - set Party Scene: custom_int /EpUwZA1GSPjO 0")
+            return
+        route: str = arg_tuple[0]
+        try:
+            value_int = int(arg_tuple[1])
+        except ValueError:
+            print("Value must be an integer")
+            return
+        try:
+            self.api.custom_command_int(route, value_int)  # pylint: disable=W0212
         except ConnectionError as error:
             print(f"Connection error: {error}")
         except ValueError as error:
@@ -233,6 +257,23 @@ class CommandShell(Cmd):
             size: float = float(argstring)
             try:
                 self.api.animation_size_set(size)
+            except ConnectionError as error:
+                print(f"Connection error: {error}")
+            except ValueError as error:
+                print(f"Value error: {error}")
+
+    def do_audio_gain(self, argstring: float):
+        """Change the audio gain of the plant
+
+        $ audio_gain [0-1]
+        """
+        if float(argstring) < 0.00 or float(argstring) > 1.00:
+            print("Size out of bounds [0-1]")
+            return
+        else:
+            gain = float(argstring)
+            try:
+                self.api.audio_gain_set(gain)
             except ConnectionError as error:
                 print(f"Connection error: {error}")
             except ValueError as error:

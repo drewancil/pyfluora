@@ -37,12 +37,12 @@ class FluoraAPI:
         It is passed on to the user-defined callback if available.
         """
 
-        logging.debug("State update received: %s", state)
-        if self._api_callback:  # send via callback if available
-            logging.debug("Callback available - sending FluoraState: %s", state)
+        logging.debug("API: State update received")
+        if self._api_callback:
+            logging.debug("API: State received - sending FluoraState via callback")
             self._api_callback(state)
         else:
-            logging.warning("Callback unavailable: %s", state)
+            logging.warning("API: State received (no callback available)")
 
     def start_server(self) -> None:
         """Start the UDP server to listen for state updates."""
@@ -102,10 +102,18 @@ class FluoraAPI:
             logging.error("Failed to change light sensor state: %s", e)
             raise
 
-    def custom_command(self, route: str, value: float) -> None:
+    def custom_command_float(self, route: str, value: float) -> None:
         """Send a custom command to the plant."""
         try:
-            self._client.custom_command(route, value)
+            self._client.custom_command_float(route, value)
+        except Exception as e:
+            logging.error("Failed to send custom command: %s", e)
+            raise
+
+    def custom_command_int(self, route: str, value: int) -> None:
+        """Send a custom command to the plant."""
+        try:
+            self._client.custom_command_int(route, value)
         except Exception as e:
             logging.error("Failed to send custom command: %s", e)
             raise

@@ -10,17 +10,35 @@ class OSCPathNames(Enum):
     LIGHT_SENSOR = "/S53upLXAu7vg"
     REBOOT = "/pixelair/engine/reboot"
     BRIGHTNESS = "/Uv7aMFw5P2lX"
+
+    # Animation modes - calling these with an int val will switch the mode as well
     ANIMATION_MODE = "/iwaaMkVzOfUM"
+
+    ANIMATION_AUTO = "/Ps4hvrg9cWFd"
     ANIMATION_MANUAL = "/tdU63ENxy4UG"
     ANIMATION_SCENE = "/EpUwZA1GSPjO"
-    SPEED_MANUAL = "/Vd72e0D61BuM"
-    SPEED_SCENE = "/Ve3ZSfSgP54T"
-    SIZE_MANUAL = "/Vd7XP0X61BuM"
+    ANIMATION_WHAT = "/yduArlhwq8kw"
+
+    # Dashboard controls
+    COLOR_MANUAL = "/VdV1IeK61BuM"
+
+    SIZE_MANUAL = "/Vd7XP0X61BuM"  # manual
     SIZE_SCENE = "/Ve3ZSfSgP54T"
-    HUE_MANUAL = "/Vd7Xz0X61BuM"
+
+    SPEED_MANUAL = "/Vd72e0D61BuM"  # manual
+    SPEED_SCENE = "/Ve3ZSfSgP54T"
+
+    # Color palette controls
+    HUE_AUTO = "/Ps4hvrg9cWFd"  # auto
+    HUE_MANUAL = "/ThWnxs65l0sj"  # manual
+    HUE_WHAT = "/Vd7Xz0X61BuM"
     HUE_SCENE = "/Ve3ZSfSgP54T"
+
+    SATURATION_AUTO = "/wzLQUAQLcWky"  # auto
     SATURATION_MANUAL = "/UH9E69aUREEb"
-    SATURATION_SCENE = "/y687U4Zgymsj"
+    SATURATION_SCENE = "/y687U4Zgymsj"  # manual
+
+    # Sound reactive controls
     AUDIO_GAIN = "/HwBeJeS0ufSp"
     AUDIO_ATTACK = "HwBeGOxYN5Sp"
     AUDIO_RELEASE = "/HwBeogt1MBDp"
@@ -33,6 +51,36 @@ class AnimationMode(Enum):
     AUTO = 0
     SCENE = 1
     MANUAL = 2
+
+
+class AnimationModeManualNew(Enum):
+    """Animation names and number for manual mode."""
+
+    TWINKLE = 1
+    LEAFSWIRL = 1  # leaf
+    MIRAGE = 1
+    RAINBOW = 1
+    RAINBOWBLOOM = 1  # leaf
+    RAINBOWSWIRL = 1  # leaf
+    SNAKES = 1  # leaf
+    HUECYCLE = 1
+    GRADIENT = 1
+    HUEEQ = 1  # SR # leaf
+    BOOMCLAP = 1  # SR  # leaf
+    STEMEQ = 1  # SR    # leaf
+    LEAFEQ = 1  # SR    # leaf
+    LEAFFADE = 1  # leaf
+    SWEEP = 1
+    PULSE = 1
+    LAMP = 1
+    SOLIDCOLOR = 1
+    STARSPANGLEDBANNER = 1
+    STARSPANGLEDSPARKLE = 1
+    HALLOWEENFADE = 1
+    HALLOWEENTWINKLE = 1
+    HOLIDAYFADE = 1
+    HOLIDAYRIPPLE = 1
+    HOLIDAYTWINKLE = 1
 
 
 class AnimationModeManual(Enum):
@@ -77,10 +125,10 @@ class AnimationModeScene(Enum):
     """Animation names and number for scene mode."""
 
     PARTY = 0
-    CHILL = 1
+    CHILL = 1  # works
     FOCUS = 2
     BEDTIME = 3
-    AWAKEN = 4
+    AWAKEN = 4  # works
 
 
 class FluoraAnimations(Enum):

@@ -20,9 +20,18 @@ class FluoraClient:
         """Return the list of supported effects."""
         return [effect.name.title() for effect in FluoraAnimations]
 
-    def custom_command(self, route: str, value: float) -> None:
+    def custom_command_float(self, route: str, value: float) -> None:
         """Send a custom command to the plant."""
-        logging.info("Client: Command custom: (%s) %0.f", route, value)
+        logging.info("Client: Command custom: (%s) %.4f", route, value)
+        try:
+            self.client.send_message(route, [value, 0])
+        except Exception as e:
+            logging.error("Failed to send custom command: %s", e)
+            raise
+
+    def custom_command_int(self, route: str, value: int) -> None:
+        """Send a custom command to the plant."""
+        logging.info("Client: Command custom: (%s) %d", route, value)
         try:
             self.client.send_message(route, [value, 0])
         except Exception as e:
