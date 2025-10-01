@@ -28,19 +28,15 @@ class FluoraAPI:
         self._state_server = FluoraStateServer(
             server_ip_port, state_callback=self._handle_state_update
         )
-        # root = logging.getLogger()
-        # logging.debug("FluoraAPI: Logging handlers configured: %s", root.handlers)
 
-    def _handle_state_update(self, state: dict) -> None:
+    def _handle_state_update(self, f_state: FluoraState) -> None:
         """Handle state update messages from the plant.
         The server module calls this function on each state update.
         It is passed on to the user-defined callback if available.
         """
-
-        logging.debug("API: State update received")
         if self._api_callback:
-            logging.debug("API: State received - sending FluoraState via callback")
-            self._api_callback(state)
+            logging.debug("API: State received - sending state via callback")
+            self._api_callback(f_state)
         else:
             logging.warning("API: State received (no callback available)")
 

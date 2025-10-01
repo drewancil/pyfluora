@@ -26,13 +26,11 @@ Basic Usage
 
     from fluoraapi import FluoraAPI
 
+    PLANT_IP_PORT = (192.168.4.172, 6767)  # Replace with your plant's IP and port
+    SERVER_IP_PORT = ("0.0.0.0", 12345)  # listens on all interfaces - port is static
+
     # Initialize the API (does not start server automatically)
-    api = FluoraAPI(
-        plant_ip="192.168.1.100",
-        plant_port=4210,
-        server_address="0.0.0.0",
-        server_port=12345
-    )
+    api = FluoraAPI(PLANT_IP_PORT, SERVER_IP_PORT)
 
     # Start listening for state updates
     api.start_server()
@@ -59,7 +57,7 @@ Context Manager Usage
     from fluoraapi import FluoraAPI
 
     # Automatically starts/stops server
-    with FluoraAPI("192.168.1.100", 4210, "0.0.0.0", 12345) as api:
+    with FluoraAPI(PLANT_IP_PORT, SERVER_IP_PORT) as api:
         api.power(1)
         api.brightness_set(0.5)
         # Server automatically stopped when exiting context
@@ -69,7 +67,6 @@ Requirements
 
 * Python 3.10+
 * python-osc
-* python-box
 
 License
 =======

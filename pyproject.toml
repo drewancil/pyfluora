@@ -7,7 +7,7 @@ include = ["fluoraapi*"]
 
 [project]
 name = "pyfluora"
-version = "0.0.4"
+version = "0.0.5"
 description = "Python library for controlling Fluora LED plant fixtures"
 readme = "README.rst"
 requires-python = ">=3.10"
@@ -27,8 +27,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "python-osc>=1.8.0",
-    "python-box>=7.0.0",
+    "python-osc>=1.9.0",
 ]
 
 [project.urls]
