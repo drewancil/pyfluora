@@ -187,7 +187,7 @@ class FluoraConfigDecoder:
 
 # example usage
 if __name__ == "__main__":
-    with open("Fluora-Config.txt", encoding="utf-8") as f:
+    with open("fluora-config.txt", encoding="utf-8") as f:
         my_schema = json.load(f)
         decoder = FluoraConfigDecoder(my_schema)
 
